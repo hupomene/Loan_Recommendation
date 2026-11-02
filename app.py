@@ -1,5 +1,6 @@
 
 from flask import Flask, request, render_template,jsonify
+import math
 
 app = Flask(__name__)
 
@@ -10,6 +11,16 @@ def home():
 
 @app.route('/',methods=['POST'])
 def Loan_Decision():
+    required = ['V','C','D','MDP','MMI','TMFR','MBR','MMA','MMR','JN','PPF','LPF','FN','BCH7','BCH13DC','BCH13DS','OC']
+    if any(not request.form.get(k, '').strip() for k in required):
+        return jsonify({'error': 'Missing required input'}), 400
+    try:
+        return _evaluate_loan()
+    except (ValueError, TypeError, OverflowError, ZeroDivisionError):
+        return jsonify({'error': 'Invalid numeric input'}), 400
+
+
+def _evaluate_loan():
     Veteran_Flag = request.form['V']
     Credit_score = request.form['C']
     Delinquency_amount = request.form['D']
@@ -47,6 +58,8 @@ def Loan_Decision():
     Occupancy = int(Occupancy)
 
 
+    if loan_amt <= 0 or any(not math.isfinite(v) for v in (downpayment, loan_amt, monthly_income, front_ratio, back_ratio, Delinquency_amount)):
+        return jsonify({'error': 'Invalid or non-positive mortgage amount or non-finite numeric input'}), 400
     downpament_percent = (downpayment / loan_amt) * 100
     # VA
 
@@ -152,4 +165,4 @@ def Loan_Decision():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='127.0.0.1', debug=False)
