@@ -30,6 +30,17 @@ class LoanValidationTests(unittest.TestCase):
         data = dict(VALID, C='not-a-number')
         self.assertEqual(self.client.post('/', data=data).status_code, 400)
 
+    def test_expected_primary_conventional_recommendation(self):
+        response = self.client.post('/', data=VALID)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Conventional- Fannie Mae', response.get_json()['Loan Recommendation'])
+
+    def test_occupancy_change_does_not_return_primary_conventional(self):
+        data = dict(VALID, OC='2')
+        response = self.client.post('/', data=data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Loan Recommendation', response.get_json())
+
     def test_infinite_loan_amount(self):
         data = dict(VALID, MMA='inf')
         self.assertEqual(self.client.post('/', data=data).status_code, 400)
